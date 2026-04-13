@@ -21,11 +21,10 @@ Em Java tradicional, você precisaria baixar e configurar um servidor pesado (co
 
 ---
 
-### 🛠️ Passo 1: Preparando a Estrutura e Dependências
+🛠️ Passo 1: Preparando a Estrutura e Dependências
+No seu projeto, o arquivo principal de configuração é o pom.xml. Adicione estas dependências para que o Maven baixe o Spark e o Gson:
 
-No seu projeto, o arquivo principal de configuração é o `pom.xml`. É nele que dizemos ao Maven para baixar o Spark e o Gson. Adicione isto dentro do seu `pom.xml`:
-
-```xml
+XML
 <dependencies>
     <dependency>
         <groupId>com.sparkjava</groupId>
@@ -37,11 +36,11 @@ No seu projeto, o arquivo principal de configuração é o `pom.xml`. É nele qu
         <artifactId>gson</artifactId>
         <version>2.10.1</version>
     </dependency>
-</dependencies>  ```
+</dependencies>
+Sua estrutura de pastas deve refletir a organização abaixo:
 
-Sua estrutura de pastas em src/main/java/org/example deve ficar assim:
-
-src/main/
+Plaintext
+ src/main/
  ├── java/org/example/
  │    ├── controller/
  │    │    └── UserController.java
@@ -59,15 +58,14 @@ src/main/
       └── swagger.json
 
 📦 Passo 2: O Modelo de Dados (Model)
-O Model é a planta-baixa. Ele define as características da nossa entidade "Pessoa", incluindo seus dados pessoais e endereço.
-Abra o arquivo model/User.java e crie a classe:
+O Model define a entidade "Pessoa" com seus dados e endereço. Abra o arquivo model/User.java:
 
 Java
 package org.example.model;
 
 public class User {
     private String name;
-    private String cpf; // Nosso identificador único
+    private String cpf; 
     private String phone;
     private String street;
     private String number;
@@ -76,14 +74,12 @@ public class User {
     private String city;
     private String state;
 
-    // O Gson exige um construtor vazio para conseguir traduzir o JSON de volta para Java
     public User() {}
 
-    // Nota: Gere os Getters e Setters na sua IDE (Alt+Insert) para todos os campos!
+    // Getters e Setters devem ser gerados aqui para todos os campos
 }
 🗄️ Passo 3: O Repositório (Simulando o Banco)
-Para focar no framework, usaremos uma List estática na memória. Quando o servidor desligar, os dados somem, mas funciona perfeitamente para entender o fluxo do CRUD.
-Abra o arquivo repository/UserRepository.java:
+Utilizamos uma List estática em memória para armazenar os dados. Abra o arquivo repository/UserRepository.java:
 
 Java
 package org.example.repository;
@@ -94,7 +90,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class UserRepository {
-    // Lista estática que simula nosso banco de dados.
     private static final List<User> users = new ArrayList<>();
 
     public void save(User user) {
@@ -105,38 +100,37 @@ public class UserRepository {
         return new ArrayList<>(users);
     }
 
-    // Busca um usuário pelo CPF. Retorna um 'Optional' para evitar erros caso não ache.
     public Optional<User> findByCpf(String cpf) {
         return users.stream().filter(u -> u.getCpf().equals(cpf)).findFirst();
     }
 
     public void update(User user) {
-        delete(user.getCpf()); // Apaga o antigo
-        save(user); // Salva o novo
+        delete(user.getCpf());
+        save(user);
     }
 
     public void delete(String cpf) {
         users.removeIf(u -> u.getCpf().equals(cpf));
     }
 }
-💼 Passo 4: As Regras de Negócio (Service)
-Nunca deixe o "Garçom" (Controller) decidir as regras do restaurante. Essa é a função do Service. Ele valida as ações antes de falar com o Repositório.
-Abra o arquivo service/UserService.java:
+
+💼 Passo 4: Regras de Negócio (Service)
+O Service valida as operações antes de persistir os dados. Abra o arquivo service/UserService.java:
 
 Java
 package org.example.service;
 
 import org.example.model.User;
 import org.example.repository.UserRepository;
+import org.example.exception.UserNotFoundException;
 import java.util.List;
 
 public class UserService {
     private final UserRepository repository = new UserRepository();
 
     public void create(User user) {
-        // Regra: Não pode existir dois CPFs iguais!
         if (repository.findByCpf(user.getCpf()).isPresent()) {
-            throw new RuntimeException("Erro: Este CPF já está cadastrado no sistema.");
+            throw new RuntimeException("Erro: Este CPF já está cadastrado.");
         }
         repository.save(user);
     }
@@ -146,38 +140,28 @@ public class UserService {
     }
 
     public User getByCpf(String cpf) {
-        // Se não achar o CPF, "joga" um erro para cima, que o Main vai capturar depois.
         return repository.findByCpf(cpf)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado no sistema."));
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
     }
 
     public void update(String cpf, User user) {
-        getByCpf(cpf); // Chama apenas para validar se o usuário existe
-        user.setCpf(cpf); // Força que o CPF continue o mesmo da URL, ignorando o do JSON
+        getByCpf(cpf); 
+        user.setCpf(cpf);
         repository.update(user);
     }
 
     public void remove(String cpf) {
-        getByCpf(cpf); // Valida se existe antes de tentar apagar
+        getByCpf(cpf);
         repository.delete(cpf);
     }
 }
+
 🚦 Passo 5: As Rotas da API (Controller)
-Aqui é onde o Spark brilha! Em poucas linhas, declaramos os endereços (URLs) que nossa API vai responder.
-
-🧠 Conceitos Importantes Desta Classe:
-req e res: Toda rota recebe uma Requisição (req - o que o usuário enviou) e devolve uma Resposta (res - o que vamos entregar).
-
-req.body() e req.params(): O .body() pega o JSON gigantesco que o usuário enviou. O .params(":cpf") pega aquele número que o usuário digitou lá na URL (ex: /user/1111).
-
-CORS (A linha mágica): Navegadores bloqueiam chamadas de edição (PUT) e deleção (DELETE) por segurança. As configurações de options e before servem para "abrir a porta" e avisar que nossa API é segura.
-
-Abra o arquivo controller/UserController.java:
+Aqui configuramos o CORS e os endereços HTTP. Abra o arquivo controller/UserController.java:
 
 Java
 package org.example.controller;
 
-import org.example.exception.ErrorResponse;
 import org.example.service.UserService;
 import com.google.gson.Gson;
 import org.example.model.User;
@@ -188,56 +172,43 @@ public class UserController {
     private final Gson gson = new Gson();
 
     public void routes() {
-        // Liberação de CORS para permitir testar a API no navegador (Scalar/Swagger)
         options("/*", (req, res) -> {
             String headers = req.headers("Access-Control-Request-Headers");
             if (headers != null) res.header("Access-Control-Allow-Headers", headers);
             res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             return "OK";
         });
+
         before((req, res) -> {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         });
 
-        // ================= ROTAS DO CRUD =================
-
-        // LISTAR (GET) -> Converte a lista do banco para JSON direto
         get("/users", (req, res) -> service.getAll(), gson::toJson);
-
-        // BUSCAR UM (GET) -> Pega o :cpf da URL
         get("/user/:cpf", (req, res) -> service.getByCpf(req.params(":cpf")), gson::toJson);
-
-        // CRIAR (POST) -> Transforma o Texto (JSON) em um Objeto Java (User.class)
+        
         post("/user", (req, res) -> {
             User user = gson.fromJson(req.body(), User.class);
             service.create(user);
-            res.status(201); // 201 significa "Criado com sucesso"
-            return "Usuário cadastrado com sucesso!";
+            res.status(201);
+            return "Cadastrado com sucesso!";
         });
 
-        // ATUALIZAR (PUT)
         put("/user/:cpf", (req, res) -> {
             User user = gson.fromJson(req.body(), User.class);
             service.update(req.params(":cpf"), user);
-            res.type("application/json");
-            return gson.toJson(new ErrorResponse("Dados atualizados com sucesso!"));
+            return "Atualizado com sucesso!";
         });
 
-        // DELETAR (DELETE)
         delete("/user/:cpf", (req, res) -> {
             service.remove(req.params(":cpf"));
-            res.type("application/json");
-            return gson.toJson(new ErrorResponse("Usuário removido com sucesso!"));
+            return "Removido com sucesso!";
         });
     }
 }
-(Nota: Para padronizar as mensagens, você pode criar uma classe simples ErrorResponse.java apenas com um atributo String message para formatar os avisos de sucesso/erro).
 
-🚪 Passo 6: O Ponto de Entrada (Main)
-Com a arquitetura pronta, o nosso Main.java fica super limpo. Ele só precisa ligar o servidor, chamar as rotas e dizer o que fazer caso algum erro aconteça no meio do caminho.
-
-Abra o arquivo Main.java:
+🚪 Passo 6: Inicialização (Main)
+A classe principal inicia o servidor e trata erros globais. Abra o arquivo Main.java:
 
 Java
 package org.example;
@@ -249,17 +220,13 @@ import static spark.Spark.*;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Define em qual porta o servidor vai rodar
         port(4567);
 
-        // 2. Chama o nosso Garçom para anotar os pedidos (Rotas)
         UserController userController = new UserController();
         userController.routes();
 
         Gson gson = new Gson();
 
-        // 3. O "Pára-quedas": Se em qualquer lugar do código der um erro (RuntimeException),
-        // ele cai aqui, devolve o Status 400 (Bad Request) e formata a mensagem de erro em JSON.
         exception(RuntimeException.class, (ex, req, res) -> {
             res.status(400);
             res.type("application/json");
@@ -271,8 +238,9 @@ public class Main {
 }
 
 ✅ Pronto para Testar!
-Rode a classe Main na sua IDE (IntelliJ).
+Execute a classe Main no IntelliJ.
 
-O servidor subirá instantaneamente.
+Utilize o Scalar ou Postman para enviar requisições JSON.
 
+Lembre-se que o CPF enviado na URL deve corresponder ao registro que você deseja manipular.
 Para testar, você não conseguirá usar apenas o navegador (pois ele só faz requisições GET). Você precisará utilizar ferramentas como Postman, Insomnia ou uma documentação interativa gerada no Scalar (com um arquivo OpenAPI/Swagger) para enviar os JSONs para o seu código!
