@@ -14,9 +14,11 @@ Colocar todo o código no arquivo `Main.java` até funciona, mas vira uma bagun�
 * **Controller:** É o garçom. Ele recebe o pedido da internet (ex: "Me dê a lista de usuários"), pede para o gerente (Service) e entrega a resposta para o cliente.
 
 **2. O que é o Gson e o JSON?**
+
 O **JSON** (JavaScript Object Notation) é o "inglês" da programação: um formato de texto universal. A biblioteca **Gson**, do Google, pega os nossos objetos Java e os traduz automaticamente para JSON, permitindo que a internet os entenda.
 
 **3. Spark e o Servidor Embutido**
+
 Em Java tradicional, você precisaria baixar e configurar um servidor pesado (como o Tomcat). O Spark traz um servidor web **embutido** (o Jetty). Basta apertar o *Play* na classe Main e ele mesmo levanta o servidor.
 
 ---
