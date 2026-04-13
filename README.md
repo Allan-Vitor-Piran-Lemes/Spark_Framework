@@ -260,7 +260,7 @@ public class UserController {
         before((req, res) -> {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            res.type("application/json"); // <--- ADICIONADO AQUI PARA APLICAR EM TUDO!
+            res.type("application/json"); 
         });
 
         get("/users", (req, res) -> service.getAll(), gson::toJson);
@@ -271,7 +271,6 @@ public class UserController {
             User user = gson.fromJson(req.body(), User.class);
             service.create(user);
             res.status(201);
-            // Agora devolve JSON igual aos outros!
             return gson.toJson(new ErrorResponse("Usuário cadastrado com sucesso!"));
         });
 
