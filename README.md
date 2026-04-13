@@ -1,30 +1,31 @@
-Tutorial: Construindo uma API CRUD Completa com Spark Framework (Java)
-Neste tutorial, vamos construir o backend de um aplicativo para cadastro de Pessoas/Usuários. A nossa API permitirá Listar, Buscar, Criar, Editar e Apagar registros (operações clássicas de um CRUD) simulando um banco de dados.
+# 🛠️ Tutorial: Construindo uma API CRUD Completa com Spark Framework (Java)
+
+Neste tutorial, vamos construir o backend de um aplicativo para cadastro de **Pessoas/Usuários**. A nossa API permitirá Listar, Buscar, Criar, Editar e Apagar registros (operações clássicas de um CRUD) simulando um banco de dados.
 
 Antes de colocar a mão no código, vamos entender alguns conceitos essenciais que utilizaremos neste projeto.
 
-🧠 Conceitos Fundamentais
-1. Por que separar em vários pacotes (Arquitetura em Camadas)?
-Colocar todo o código no arquivo Main.java até funciona, mas vira uma bagunça rápida. Nós separamos o código em pacotes (model, repository, service, controller) para dividir as responsabilidades:
+### 🧠 Conceitos Fundamentais
 
-Model: É o molde. Define o que é um Usuário (tem nome, cpf, etc.).
+**1. Por que separar em vários pacotes (Arquitetura em Camadas)?**
+Colocar todo o código no arquivo `Main.java` até funciona, mas vira uma bagunça rápida. Nós separamos o código em pacotes (`model`, `repository`, `service`, `controller`) para dividir as responsabilidades:
+* **Model:** É o molde. Define o que é um Usuário (tem nome, cpf, etc.).
+* **Repository:** É o bibliotecário. Só ele sabe como guardar e buscar os dados.
+* **Service:** É o segurança/gerente. Ele aplica as regras de negócio (ex: "Não deixe cadastrar se o CPF já existir").
+* **Controller:** É o garçom. Ele recebe o pedido da internet (ex: "Me dê a lista de usuários"), pede para o gerente (Service) e entrega a resposta para o cliente.
 
-Repository: É o bibliotecário. Só ele sabe como guardar e buscar os dados.
+**2. O que é o Gson e o JSON?**
+Sistemas diferentes (como o app em Flutter do seu cunhado e o seu backend em Java) não falam a mesma língua nativamente. O **JSON** (JavaScript Object Notation) é o "inglês" da programação: um formato de texto universal. A biblioteca **Gson**, do Google, pega os nossos objetos Java e os traduz automaticamente para JSON, permitindo que a internet os entenda.
 
-Service: É o segurança/gerente. Ele aplica as regras de negócio (ex: "Não deixe cadastrar se o CPF já existir").
+**3. Spark e o Servidor Embutido**
+Em Java tradicional, você precisaria baixar e configurar um servidor pesado (como o Tomcat). O Spark traz um servidor web **embutido** (o Jetty). Basta apertar o *Play* na classe Main e ele mesmo levanta o servidor.
 
-Controller: É o garçom. Ele recebe o pedido da internet (ex: "Me dê a lista de usuários"), pede para o gerente (Service) e entrega a resposta para o cliente.
+---
 
-2. O que é o Gson e o JSON?
-Sistemas diferentes (como o app em Flutter do seu cunhado e o seu backend em Java) não falam a mesma língua nativamente. O JSON (JavaScript Object Notation) é o "inglês" da programação: um formato de texto universal. A biblioteca Gson, do Google, pega os nossos objetos Java e os traduz automaticamente para JSON, permitindo que a internet os entenda.
+### 🛠️ Passo 1: Preparando a Estrutura e Dependências
 
-3. Spark e o Servidor Embutido
-Em Java tradicional, você precisaria baixar e configurar um servidor pesado (como o Tomcat). O Spark traz um servidor web embutido (o Jetty). Basta apertar o Play na classe Main e ele mesmo levanta o servidor.
+No seu projeto, o arquivo principal de configuração é o `pom.xml`. É nele que dizemos ao Maven para baixar o Spark e o Gson. Adicione isto dentro do seu `pom.xml`:
 
-🛠️ Passo 1: Preparando a Estrutura e Dependências
-No seu projeto, o arquivo principal de configuração é o pom.xml. É nele que dizemos ao Maven para baixar o Spark e o Gson. Adicione isto dentro do seu pom.xml:
-
-XML
+```xml
 <dependencies>
     <dependency>
         <groupId>com.sparkjava</groupId>
@@ -39,6 +40,7 @@ XML
 </dependencies>
 
 Sua estrutura de pastas em src/main/java/org/example deve ficar assim:
+
 src/main/
  ├── java/org/example/
  │    ├── controller/
