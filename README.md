@@ -37,7 +37,7 @@ No seu projeto, o arquivo principal de configuração é o `pom.xml`. É nele qu
         <artifactId>gson</artifactId>
         <version>2.10.1</version>
     </dependency>
-</dependencies>
+</dependencies>  ```
 
 Sua estrutura de pastas em src/main/java/org/example deve ficar assim:
 
