@@ -21,14 +21,8 @@ public class UserRepository {
     }
 
     public void update(User user) {
-        Optional<User> existingUserOpt = findByCpf(user.getCpf());
-
-        if (existingUserOpt.isPresent()) {
-            users.remove(existingUserOpt.get());
-            users.add(user);
-        } else {
-            throw new RuntimeException("Usuário com CPF " + user.getCpf() + " não encontrado para atualização");
-        }
+        delete(user.getCpf());
+        save(user);
     }
 
     public void delete(String cpf) {
